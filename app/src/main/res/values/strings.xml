@@ -242,4 +242,17 @@
     <string name="file_picker_unavailable">На устройстве отсутствует системный выбор файлов. Для продолжения предоставьте приложению доступ к файлам.</string>
     <string name="grant_access">Предоставить доступ</string>
     <string name="storage_access_not_granted">Доступ к файлам не предоставлен</string>
+    <string name="diagnostic_network_check">Проверить интернет</string>
+    <string name="diagnostic_network_checking">Проверка DNS и HTTPS…</string>
+    <string name="diagnostic_network_title">Проверка обычного интернет-соединения</string>
+    <string name="diagnostic_network_state">Состояние сети: %1$s</string>
+    <string name="diagnostic_network_connected">подключена</string>
+    <string name="diagnostic_network_disconnected">нет активной сети</string>
+    <string name="diagnostic_network_validated">система подтвердила доступ в интернет</string>
+    <string name="diagnostic_network_unvalidated">система не подтвердила доступ в интернет</string>
+    <string name="diagnostic_dns_success">DNS: получено адресов — %1$d; время — %2$d мс</string>
+    <string name="diagnostic_dns_failed">DNS: ошибка %1$s; время — %2$d мс</string>
+    <string name="diagnostic_https_success">HTTPS: ответ HTTP %1$d; время — %2$d мс</string>
+    <string name="diagnostic_https_failed">HTTPS: ошибка %1$s; время — %2$d мс</string>
+    <string name="diagnostic_network_note">Проверка использует обычное системное соединение с example.com. Она проверяет базовую работу DNS и HTTPS и не определяет причину недоступности других сайтов.</string>
 </resources>
