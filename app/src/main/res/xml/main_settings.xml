@@ -7,12 +7,6 @@
     <androidx.preference.PreferenceCategory
         android:title="@string/general_category">
 
-        <Preference
-            android:key="auto_configure"
-            android:icon="@drawable/ic_autorenew"
-            android:title="@string/auto_configure_title"
-            android:summary="@string/auto_configure_summary" />
-
         <ListPreference
             android:key="language"
             android:icon="@drawable/ic_language"
