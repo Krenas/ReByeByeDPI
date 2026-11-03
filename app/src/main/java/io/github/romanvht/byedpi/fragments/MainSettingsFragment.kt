@@ -32,6 +32,23 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
         setEditTestPreferenceListenerPort("byedpi_proxy_port")
         setEditTextPreferenceListener("dns_ip") { it.isBlank() || checkNotLocalIp(it) }
 
+        findPreferenceNotNull<Preference>("auto_configure")
+            .setOnPreferenceClickListener {
+                val result = AutoConfigurationUtils.apply(requireContext())
+                updatePreferences()
+                AlertDialog.Builder(requireContext())
+                    .setTitle(
+                        getString(
+                            if (result.applied) R.string.auto_configure_complete
+                            else R.string.auto_configure_failed
+                        )
+                    )
+                    .setMessage(result.message)
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show()
+                true
+            }
+
         findPreferenceNotNull<ListPreference>("language")
             .setOnPreferenceChangeListener { _, newValue ->
                 SettingsUtils.setLang(newValue as String)
