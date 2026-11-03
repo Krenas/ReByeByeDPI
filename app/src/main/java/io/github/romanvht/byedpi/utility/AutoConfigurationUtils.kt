@@ -26,8 +26,12 @@ object AutoConfigurationUtils {
 
     fun apply(context: Context): Result {
         val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val network = manager.activeNetwork
-            ?: return Result(false, "Активная сеть не обнаружена. Настройки не изменены.")
+        @Suppress("DEPRECATION")
+        val network = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            manager.activeNetwork
+        } else {
+            manager.allNetworks.firstOrNull { manager.getNetworkInfo(it)?.isConnected == true }
+        } ?: return Result(false, "Активная сеть не обнаружена. Настройки не изменены.")
 
         val capabilities = manager.getNetworkCapabilities(network)
             ?: return Result(false, "Не удалось получить параметры сети. Настройки не изменены.")
@@ -95,7 +99,8 @@ object AutoConfigurationUtils {
         editor.apply()
 
         val networkName = networkName(capabilities)
-        val validated = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        val validated = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+            capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
         val header = "Сеть: ${networkName}\nИнтернет: ${if (validated) "подтверждён Android" else "не подтверждён Android"}"
         return Result(true, header + "\n" + updates.joinToString("\n"))
     }
