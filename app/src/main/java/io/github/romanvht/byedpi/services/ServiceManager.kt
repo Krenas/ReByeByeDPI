@@ -162,7 +162,6 @@ object ServiceManager {
         val current = Session(mode, NativeEngine(app, mode))
         session = current
         configure(current, app)
-        publish(mode, AppStatus.Running, STARTED_BROADCAST)
         (app.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(PAUSE_NOTIFICATION_ID)
         monitor(current, launchService = true)
         try {
@@ -207,7 +206,6 @@ object ServiceManager {
         }
         val current = Session(running.first, NativeEngine(app, running.first, running.second))
         session = current
-        publish(current.mode, AppStatus.Running, STARTED_BROADCAST)
         monitor(current, launchService = false)
     }
 
