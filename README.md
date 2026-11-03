@@ -63,3 +63,5 @@ SHA-256:
 ### Благодарность
 - [hufrea](https://github.com/hufrea) - за [ByeDPI](https://github.com/hufrea/byedpi)
 - [dovecoteescapee](https://github.com/dovecoteescapee) - за изначальную реализацию [ByeDPIAndroid](https://github.com/dovecoteescapee/ByeDPIAndroid)
+
+Полный список указанных upstream-авторов и используемых проектов: [AUTHORS.md](AUTHORS.md).
