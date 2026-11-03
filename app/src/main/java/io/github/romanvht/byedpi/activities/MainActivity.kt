@@ -310,11 +310,12 @@ class MainActivity : BaseActivity() {
     }
 
     private fun showDiagnostics() {
-        val report = DiagnosticUtils.buildReport(this)
+        val baseReport = DiagnosticUtils.buildReport(this)
+        var currentReport = baseReport
         val padding = (24 * resources.displayMetrics.density).toInt()
 
         val textView = TextView(this).apply {
-            text = report
+            text = currentReport
             setPadding(padding, padding / 2, padding, padding / 2)
         }
 
@@ -326,17 +327,46 @@ class MainActivity : BaseActivity() {
             .setTitle(R.string.diagnostics)
             .setView(scrollView)
             .setPositiveButton(R.string.diagnostic_copy) { _, _ ->
-                ClipboardUtils.copy(this, report, getString(R.string.diagnostics))
+                ClipboardUtils.copy(this, currentReport, getString(R.string.diagnostics))
             }
+            .setNeutralButton(R.string.diagnostic_network_check, null)
             .setNegativeButton(android.R.string.cancel, null)
             .create()
 
         dialog.setOnShowListener {
             val copyButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            val checkButton = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
             val cancelButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
-            copyButton.nextFocusLeftId = cancelButton.id
+
+            checkButton.setOnClickListener {
+                if (!checkButton.isEnabled) return@setOnClickListener
+                checkButton.isEnabled = false
+                checkButton.setText(R.string.diagnostic_network_checking)
+                textView.text = "$baseReport\n\n${getString(R.string.diagnostic_network_checking)}"
+
+                lifecycleScope.launch {
+                    val networkReport = try {
+                        NetworkDiagnostics.run(this@MainActivity)
+                    } catch (exception: Exception) {
+                        Log.e(TAG, "Network diagnostics failed", exception)
+                        getString(
+                            R.string.diagnostic_https_failed,
+                            exception.javaClass.simpleName,
+                            0
+                        )
+                    }
+                    currentReport = "$baseReport\n\n$networkReport"
+                    textView.text = currentReport
+                    checkButton.isEnabled = true
+                    checkButton.setText(R.string.diagnostic_network_check)
+                }
+            }
+
+            copyButton.nextFocusLeftId = checkButton.id
             copyButton.nextFocusRightId = cancelButton.id
-            cancelButton.nextFocusLeftId = copyButton.id
+            checkButton.nextFocusLeftId = copyButton.id
+            checkButton.nextFocusRightId = cancelButton.id
+            cancelButton.nextFocusLeftId = checkButton.id
             cancelButton.nextFocusRightId = copyButton.id
             copyButton.requestFocus()
         }
