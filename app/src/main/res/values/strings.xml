@@ -1,10 +1,6 @@
 <resources>
     <string name="byedpi_docs">https://github.com/hufrea/byedpi/blob/main/README.md</string>
-    <string name="app_name">ByeByeDPI Автонастройка</string>
-    <string name="auto_configure_title">Автонастройка</string>
-    <string name="auto_configure_summary">Заполнить сетевые параметры по текущему подключению. Режим и стратегии не изменяются.</string>
-    <string name="auto_configure_complete">Автонастройка завершена</string>
-    <string name="auto_configure_failed">Автонастройка не выполнена</string>
+    <string name="app_name">ByeByeDPI</string>
     <string name="cmd_documentation">Документация ByeDPI</string>
     <string name="toggle_connect">Вкл/Выкл</string>
     <string name="vpn_connect">Подключить</string>
