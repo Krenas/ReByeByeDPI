@@ -242,4 +242,26 @@
     <string name="file_picker_unavailable">На устройстве отсутствует системный выбор файлов. Для продолжения предоставьте приложению доступ к файлам.</string>
     <string name="grant_access">Предоставить доступ</string>
     <string name="storage_access_not_granted">Доступ к файлам не предоставлен</string>
+    <string name="diagnostic_network_check">Проверить интернет</string>
+    <string name="diagnostic_network_checking">Проверка DNS и HTTPS…</string>
+    <string name="diagnostic_network_title">Проверка обычного интернет-соединения</string>
+    <string name="diagnostic_network_state">Состояние сети: %1$s</string>
+    <string name="diagnostic_network_connected">подключена</string>
+    <string name="diagnostic_network_disconnected">нет активной сети</string>
+    <string name="diagnostic_network_validated">система подтвердила доступ в интернет</string>
+    <string name="diagnostic_network_unvalidated">система не подтвердила доступ в интернет</string>
+    <string name="diagnostic_dns_success">DNS: получено адресов — %1$d; время — %2$d мс</string>
+    <string name="diagnostic_dns_failed">DNS: ошибка %1$s; время — %2$d мс</string>
+    <string name="diagnostic_https_success">HTTPS: ответ HTTP %1$d; время — %2$d мс</string>
+    <string name="diagnostic_https_failed">HTTPS: ошибка %1$s; время — %2$d мс</string>
+    <string name="diagnostic_network_note">Проверка использует обычное системное соединение с example.com. Она проверяет базовую работу DNS и HTTPS и не определяет причину недоступности других сайтов.</string>
+
+    <string name="quick_setup_title">Простая настройка</string>
+    <string name="quick_setup_description">Выберите способ подключения и автоматический запуск. Сохранённые параметры и команды ByeDPI останутся без изменений.</string>
+    <string name="quick_setup_mode_label">Способ подключения</string>
+    <string name="quick_setup_mode_vpn">VPN — системный режим Android; трафик обрабатывается локально, удалённого VPN-сервера нет.</string>
+    <string name="quick_setup_mode_proxy">Прокси — локальный адрес; приложения должны поддерживать ручную настройку прокси.</string>
+    <string name="quick_setup_autostart">Открывать приложение при включении устройства</string>
+    <string name="quick_setup_autoconnect">Автоматически подключаться при открытии приложения</string>
+    <string name="quick_setup_save_start">Сохранить и запустить</string>
 </resources>
