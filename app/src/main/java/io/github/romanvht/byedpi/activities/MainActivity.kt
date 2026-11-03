@@ -14,6 +14,10 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import android.widget.CheckBox
+import android.widget.LinearLayout
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.ListView
 import android.widget.ScrollView
 import android.widget.TextView
@@ -275,6 +279,11 @@ class MainActivity : BaseActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
+            R.id.action_quick_setup -> {
+                showQuickSetup()
+                true
+            }
+
             R.id.action_diagnostics -> {
                 showDiagnostics()
                 true
@@ -307,6 +316,101 @@ class MainActivity : BaseActivity() {
 
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    private fun showQuickSetup() {
+        if (TestService.isRunning) {
+            Toast.makeText(this, R.string.test_unavailable, Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (appStatus.first == AppStatus.Running) {
+            Toast.makeText(this, R.string.settings_unavailable, Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val preferences = getPreferences()
+        val density = resources.displayMetrics.density
+        fun dp(value: Int) = (value * density).toInt()
+
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(8), dp(24), dp(8))
+        }
+        val scrollView = ScrollView(this).apply {
+            addView(content)
+        }
+
+        fun addText(text: String, topMargin: Int = 0, bold: Boolean = false) {
+            val label = TextView(this).apply {
+                this.text = text
+                textSize = 14f
+                if (bold) setTypeface(typeface, android.graphics.Typeface.BOLD)
+            }
+            content.addView(label, LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                if (topMargin > 0) this.topMargin = dp(topMargin)
+            })
+        }
+
+        addText(getString(R.string.quick_setup_description))
+        addText(getString(R.string.quick_setup_mode_label), 18, true)
+
+        val modeGroup = RadioGroup(this).apply {
+            orientation = RadioGroup.VERTICAL
+        }
+        val vpnOption = RadioButton(this).apply {
+            id = View.generateViewId()
+            text = getString(R.string.quick_setup_mode_vpn)
+        }
+        val proxyOption = RadioButton(this).apply {
+            id = View.generateViewId()
+            text = getString(R.string.quick_setup_mode_proxy)
+        }
+        modeGroup.addView(vpnOption)
+        modeGroup.addView(proxyOption)
+        modeGroup.check(
+            if (preferences.getString("byedpi_mode", "vpn") == "proxy") {
+                proxyOption.id
+            } else {
+                vpnOption.id
+            }
+        )
+        content.addView(modeGroup)
+
+        val autostart = CheckBox(this).apply {
+            text = getString(R.string.quick_setup_autostart)
+            isChecked = preferences.getBoolean("autostart", false)
+        }
+        val autoConnect = CheckBox(this).apply {
+            text = getString(R.string.quick_setup_autoconnect)
+            isChecked = preferences.getBoolean("auto_connect", false)
+        }
+        content.addView(autostart)
+        content.addView(autoConnect)
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(R.string.quick_setup_title)
+            .setView(scrollView)
+            .setPositiveButton(R.string.quick_setup_save_start, null)
+            .setNegativeButton(android.R.string.cancel, null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val selectedMode = if (proxyOption.isChecked) "proxy" else "vpn"
+                preferences.edit(commit = true) {
+                    putString("byedpi_mode", selectedMode)
+                    putBoolean("autostart", autostart.isChecked)
+                    putBoolean("auto_connect", autoConnect.isChecked)
+                }
+                dialog.dismiss()
+                start()
+            }
+        }
+        dialog.show()
     }
 
     private fun showDiagnostics() {
