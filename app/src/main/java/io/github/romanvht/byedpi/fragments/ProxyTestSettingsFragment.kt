@@ -16,10 +16,10 @@ class ProxyTestSettingsFragment : PreferenceFragmentCompat() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.proxy_test_settings, rootKey)
 
-        setupNumberSummary("byedpi_proxytest_delay", R.string.proxytest_delay_desc)
-        setupNumberSummary("byedpi_proxytest_requests", R.string.proxytest_requests_desc)
-        setupNumberSummary("byedpi_proxytest_limit", R.string.proxytest_limit_desc)
-        setupNumberSummary("byedpi_proxytest_timeout", R.string.proxytest_timeout_desc)
+        setupNumberSummary("byedpi_proxytest_delay", R.string.proxytest_delay_desc, "0–10")
+        setupNumberSummary("byedpi_proxytest_requests", R.string.proxytest_requests_desc, "1–20")
+        setupNumberSummary("byedpi_proxytest_limit", R.string.proxytest_limit_desc, "1–50")
+        setupNumberSummary("byedpi_proxytest_timeout", R.string.proxytest_timeout_desc, "1–15 секунд")
 
         setEditTestPreferenceListenerInt("byedpi_proxytest_delay", 0, 10)
         setEditTestPreferenceListenerInt("byedpi_proxytest_requests", 1, 20)
@@ -63,13 +63,14 @@ class ProxyTestSettingsFragment : PreferenceFragmentCompat() {
         ))
     }
 
-    private fun setupNumberSummary(key: String, descriptionResId: Int) {
+    private fun setupNumberSummary(key: String, descriptionResId: Int, inputLimit: String) {
         val pref = findPreference<EditTextPreference>(key) ?: return
 
         pref.summaryProvider = Preference.SummaryProvider<EditTextPreference> { p ->
             val value = p.text ?: "—"
             val description = getString(descriptionResId)
-            "$description\n" + getString(R.string.help_current_value, value)
+            val limit = getString(R.string.help_input_limit, inputLimit)
+            "$description\n$limit\n" + getString(R.string.help_current_value, value)
         }
     }
 }
