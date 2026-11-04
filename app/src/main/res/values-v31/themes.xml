@@ -16,7 +16,6 @@
         <item name="android:textAppearanceListItemSecondary">@style/TextSummary</item>
         <item name="android:textAppearanceListItemSmall">@style/TextSummary</item>
 
-        <item name="switchPreferenceStyle">@style/App.Preference.SwitchPreference</item>
         <item name="materialCardViewStyle">@style/SmallShadowCard</item>
     </style>
 
@@ -27,10 +26,6 @@
     <style name="CircleButton" parent="Widget.Material3.Button.Icon">
         <item name="cornerRadius">60dp</item>
         <item name="android:textSize">0sp</item>
-    </style>
-
-    <style name="App.Preference.SwitchPreference" parent="Preference.SwitchPreference.Material">
-        <item name="android:widgetLayout">@layout/material_switch</item>
     </style>
 
     <style name="CustomAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
