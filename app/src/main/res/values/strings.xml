@@ -162,7 +162,7 @@
     <string name="battery_optimization_disabled_summary">Отключена</string>
     <string name="permission_category">Разрешения</string>
     <string name="documentation_link">Инструкция</string>
-    <string name="proxytest_delay_desc">Пауза перед очередной проверкой. Увеличение паузы удлиняет весь запуск; это не делает сетевой вариант автоматически лучше.</string>
+    <string name="proxytest_delay_desc">Пауза перед проверкой сайта и между тестируемыми записями. В текущей реализации одна единица поля соответствует 0,5 секунды. Увеличение паузы удлиняет запуск, но не делает сетевую конфигурацию лучше.</string>
     <string name="proxytest_requests_desc">Сколько раз тестер повторяет запрос к каждому домену. Больше повторов означает больше запросов и более долгую проверку; это не гарантирует точность результата.</string>
     <string name="proxytest_limit_desc">Сколько запросов тестер может выполнять одновременно. Это влияет на параллельную нагрузку на телефон и сеть; слишком высокая нагрузка может вызывать задержки и ошибки.</string>
     <string name="proxytest_timeout_desc">Сколько тестер ждёт ответа на один запрос. Слишком короткое ожидание может считать медленный сайт недоступным; длинное ожидание увеличивает время проверки.</string>
@@ -243,6 +243,7 @@
 
     <!-- Plain-language help: common controls -->
     <string name="help_current_value">Сейчас: %1$s</string>
+    <string name="help_input_limit">Проверка поля в приложении: %1$s. Это допустимый формат ввода, а не рекомендуемое или оптимальное значение.</string>
     <string name="help_value_not_set">не задано</string>
     <string name="help_enabled">включено</string>
     <string name="help_disabled">выключено</string>
