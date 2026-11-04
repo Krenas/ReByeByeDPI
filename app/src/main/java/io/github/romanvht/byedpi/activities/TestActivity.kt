@@ -150,8 +150,14 @@ class TestActivity : BaseActivity() {
             state.strategies.isNotEmpty() -> getString(R.string.test_complete)
             else -> ""
         }
-        disclaimerTextView.visibility = if (state.wasInterrupted || (!state.isRunning && state.strategies.isEmpty())) View.VISIBLE else View.GONE
-        disclaimerTextView.text = getString(if (state.wasInterrupted) R.string.test_crash else R.string.test_disclaimer)
+        disclaimerTextView.visibility = View.VISIBLE
+        disclaimerTextView.text = buildString {
+            append(getString(R.string.test_disclaimer))
+            if (state.wasInterrupted) {
+                append("\\n\\n")
+                append(getString(R.string.test_crash))
+            }
+        }
 
         strategyAdapter.setTestingState(state.isRunning)
         val replace = renderedRunId != state.runId || strategies.map { it.command } != state.strategies.map { it.command }
