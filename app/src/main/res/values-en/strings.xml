@@ -78,7 +78,7 @@
     <string name="desync_https">HTTPS desync</string>
     <string name="desync_udp">UDP desync</string>
     <string name="oob_data">OOB Data</string>
-    <string name="sni_of_fake_packet">SNI of fake packet</string>
+    <string name="sni_of_fake_packet">Server name in additional packet (SNI)</string>
     <string name="byedpi_proxy">Proxy</string>
     <string name="byedpi_desync">Desync</string>
     <string name="command_line_arguments">Command line arguments</string>
@@ -86,7 +86,7 @@
     <string name="byedpi_hosts_blacklist_setting">Host blacklist</string>
     <string name="byedpi_hosts_whitelist_setting">Host whitelist</string>
     <string name="byedpi_tcp_fast_open_setting">TCP Fast Open</string>
-    <string name="byedpi_udp_fake_count">Number of fake UDP</string>
+    <string name="byedpi_udp_fake_count">Number of additional UDP packets</string>
     <string name="ipv6_setting">IPv6</string>
     <string name="byedpi_fake_offset_setting">Fake packet offset</string>
     <string name="byedpi_drop_sack_setting">Drop SACK</string>
@@ -127,13 +127,7 @@
     <string name="summary_test">Testing of prepared command sets</string>
     <string name="test_start">Start testing</string>
     <string name="test_stop">Stop testing</string>
-    <string name="test_disclaimer">
-        This section allows you to test the application using a set of pre-prepared commands.
-        \nDuring testing, the system checks the availability of various websites via the proxy, and you can observe the process in real time.
-        \n
-        \nPlease note that this testing functionality is under development, and the command set is currently limited.
-        \nTest results may be helpful for a preliminary assessment of the proxy, but successful completion does not guarantee flawless performance in real-world conditions.
-    </string>
+    <string name="test_disclaimer">How to read results: each row is one entry from the test set. The counter shows how many requests completed successfully out of the total. The result applies only to this run, current network, and selected domains; it does not guarantee other sites will work. The Apply button copies the selected entry into the current command configuration.</string>
     <string name="test_crash">
         Did the application crash during testing?
         \n\nGo to the test settings and increase the waiting time between commands in 2-second increments (2, 4, 6..).
@@ -148,7 +142,7 @@
     <string name="test_cmd_connected">Connected</string>
     <string name="test_log_copy">Copy log</string>
     <string name="toast_copied">Сopied</string>
-    <string name="test_settings_sni">SNI fake packets</string>
+    <string name="test_settings_sni">Server name in test request (SNI)</string>
     <string name="test_settings_fulllog">Host response output</string>
     <string name="test_settings_logclickable">All commands are clickable</string>
     <string name="test_settings_domain_lists">Domain lists for testing</string>
@@ -158,8 +152,8 @@
     <string name="test_settings_commands">Command list</string>
     <string name="test_delay">Delay between commands</string>
     <string name="test_requests">Number of domain requests</string>
-    <string name="test_requests_limit">Maximum parallel requests</string>
-    <string name="test_timeout">Domain response timeout</string>
+    <string name="test_requests_limit">Concurrent requests</string>
+    <string name="test_timeout">Wait for site response</string>
     <string name="test_show_details">Show details</string>
     <string name="test_hide_details">Hide details</string>
     <string name="test_expand">Expand</string>
@@ -168,10 +162,10 @@
     <string name="battery_optimization_disabled_summary">Disabled</string>
     <string name="permission_category">Permissions</string>
     <string name="documentation_link">Instruction</string>
-    <string name="proxytest_delay_desc">A higher number may increase stability</string>
-    <string name="proxytest_requests_desc">A higher number increases accuracy but may reduce stability</string>
-    <string name="proxytest_limit_desc">A higher number increases test speed but may reduce stability</string>
-    <string name="proxytest_timeout_desc">A higher number reduces test speed but improves stability</string>
+    <string name="proxytest_delay_desc">Pause before the next check. A longer pause makes the run take longer; it does not automatically improve a network option.</string>
+    <string name="proxytest_requests_desc">How many times the tester repeats a request to each domain. More repeats mean more requests and a longer test; they do not guarantee a more accurate result.</string>
+    <string name="proxytest_limit_desc">How many requests the tester may run at once. This affects simultaneous network and device load; excessive load can cause delays and errors.</string>
+    <string name="proxytest_timeout_desc">How long the tester waits for one request. Too little time may mark a slow site as unavailable; more time makes the test longer.</string>
     <string name="domain_lists">Domain Lists</string>
     <string name="domain_lists_summary">Managing domain lists for testing</string>
     <string name="domain_list_add_new">Add new list</string>
@@ -246,4 +240,67 @@
     <string name="file_picker_unavailable">The device has no system file picker. Grant the app file access to continue.</string>
     <string name="grant_access">Grant access</string>
     <string name="storage_access_not_granted">File access was not granted</string>
+
+    <string name="help_current_value">Current: %1$s</string>
+    <string name="help_value_not_set">not set</string>
+    <string name="help_enabled">enabled</string>
+    <string name="help_disabled">disabled</string>
+    <string name="help_intro_title">How to read these settings</string>
+    <string name="help_intro_editor">The current values and the purpose of each field are shown below. These options affect traffic handling. There is no universally correct combination for every network. Changes may affect compatibility or connectivity. Leave a field unchanged when you are unsure what it does.</string>
+    <string name="help_intro_test">This section configures the test process: pauses, request counts, and the list of checked addresses. It does not tell you which DPI value is best. Longer or more parallel tests change load and duration; results do not guarantee performance in every network.</string>
+    <string name="help_intro_command">This is a text command line, not a regular settings form. Each argument can change engine behavior. Do not edit arguments manually when you do not understand them; use the standard editor explanations and save a backup first.</string>
+
+    <string name="help_language">The language used for labels and messages. It does not affect the network connection.</string>
+    <string name="help_theme">Changes only the app appearance: light, dark, or system theme.</string>
+    <string name="help_mode">VPN uses Android's system VPN interface for selected traffic. Proxy opens a local proxy port. These are different traffic paths; stop the service before switching.</string>
+    <string name="help_dns">DNS translates a site name into a network address. It affects address lookup but does not guarantee that a site is reachable. System Private DNS takes precedence when configured.</string>
+    <string name="help_ipv6">Allows IPv6 in VPN mode. It only applies when the current network has an IPv6 address and route. This switch cannot create IPv6 support where none exists.</string>
+    <string name="help_applist">Controls which apps are covered by the VPN. None disables list filtering; blacklist excludes selected apps; whitelist includes only selected apps.</string>
+    <string name="help_selected_apps">The list of apps affected by the filter above. Changing this list changes which apps use the VPN.</string>
+    <string name="help_autostart">Allows the app service to start after the phone boots. It does not mean the connection starts automatically.</string>
+    <string name="help_autoconnect">Starts the service automatically when the app is opened. It does not change network parameters or choose settings for you.</string>
+    <string name="help_cmd_enabled">Selects where ByeDPI settings come from: the standard field editor or the text command line. Only one editor is active at a time.</string>
+    <string name="help_ui_editor">Opens the standard editor with separate fields and switches. Its values are saved in app settings.</string>
+    <string name="help_cmd_editor">Opens the command-line editor. This is a text format for experienced users; changing arguments at random may prevent startup.</string>
+    <string name="help_proxy_test">Opens the test screen for the saved command set. Results describe only that run and the selected list of sites.</string>
+    <string name="help_proxy_ip">The local address where the app accepts proxy connections. This is not a website address or your phone's external IP. An invalid address can make the proxy unavailable.</string>
+    <string name="help_proxy_port">The local proxy port — the connection point on the phone. If another service already uses it, the proxy may fail to start.</string>
+    <string name="help_battery">Excluding the app from battery optimization helps Android avoid stopping its background service. It may increase battery use.</string>
+    <string name="help_storage">This permission is used for some import, export, and file operations. It does not change network settings.</string>
+
+    <string name="help_max_connections">Maximum simultaneous connections served by the local engine. A larger number does not mean faster internet; it may use more memory and resources.</string>
+    <string name="help_buffer_size">Temporary storage size for network data. It changes memory usage during transfer; very large values may waste memory.</string>
+    <string name="help_no_domain">Disables domain-related handling in the engine. This changes how it works with site names; features that rely on domains may behave differently.</string>
+    <string name="help_tcp_fast_open">Enables TCP Fast Open support when available on the system and the other endpoint. If support is unavailable, it may have no effect; compatibility depends on the network.</string>
+    <string name="help_hosts_mode">Defines which domains the list rule applies to: all, exclusions in a blacklist, or only entries in a whitelist. An empty or incorrect list can produce unexpected coverage.</string>
+    <string name="help_hosts_blacklist">Domains excluded from the selected handling when blacklist mode is active. Each entry is a site name; editing the list changes the rule coverage.</string>
+    <string name="help_hosts_whitelist">Domains covered by the selected handling when whitelist mode is active. Editing the list changes which sites the rule applies to.</string>
+    <string name="help_default_ttl">TTL is the lifetime counter of an IP packet: network nodes decrease it, and the packet stops being forwarded when it reaches zero. This field changes the default TTL used by the engine. An unsuitable value can disrupt delivery.</string>
+    <string name="help_desync_method">Selects an internal traffic-processing method. Different options change the structure or order of data transmission. The name alone cannot tell which option is compatible with a particular network; there is no universal recommendation.</string>
+    <string name="help_split_position">Specifies where the data stream is divided. Changing it moves the boundary between parts of a request; an unsuitable position can change how the other endpoint parses it.</string>
+    <string name="help_split_at_host">Changes the split boundary so that it is tied to the part of the request containing the Host name.</string>
+    <string name="help_drop_sack">Changes handling of TCP SACK, a mechanism that reports received data blocks. Disabling this information may affect TCP transfer efficiency and reliability.</string>
+    <string name="help_fake_ttl">TTL of the additional artificial packet. It is not the TTL of the phone or of all regular packets; an unsuitable value may cause that packet to be lost.</string>
+    <string name="help_fake_offset">The offset sets the position of data inside an additional artificial packet. It changes that packet's contents; an unsuitable value may make it invalid.</string>
+    <string name="help_fake_sni">SNI is the server name sent at the start of a TLS connection. Here it is used in an additional artificial packet; changing it changes the name carried there, not the phone's DNS.</string>
+    <string name="help_oob_data">A single control character used by the out-of-band TCP mode. Changing it changes the contents of that control field; an arbitrary character may be unsuitable.</string>
+    <string name="help_desync_http">Allows the selected processing to be applied to HTTP traffic. When off, that processing is not applied to HTTP.</string>
+    <string name="help_desync_https">Allows the selected processing to be applied to HTTPS/TLS traffic. When off, that processing is not applied to HTTPS.</string>
+    <string name="help_desync_udp">Allows the selected processing to be applied to UDP traffic. UDP is separate from TCP; this switch does not affect ordinary TCP connections.</string>
+    <string name="help_host_mixed_case">Changes the letter case in the Host field of an HTTP request. The site address remains the same in meaning, but the header format changes.</string>
+    <string name="help_domain_mixed_case">Changes the letter case of the domain name inside an HTTP request. Some unusual servers or intermediate systems may handle that format differently.</string>
+    <string name="help_host_remove_spaces">Removes spaces from the Host field of an HTTP request. This changes the header format; an unusual original value may become invalid.</string>
+    <string name="help_tlsrec_enabled">Enables splitting a TLS record into parts. This changes the structure of TLS data transmission; it does not decrypt traffic or change a certificate.</string>
+    <string name="help_tlsrec_position">The position where a TLS record is split. It changes the boundary in the protected handshake; one DNS test cannot determine a correct value.</string>
+    <string name="help_tlsrec_at_sni">Ties the TLS record split position to the SNI area — the server name at the start of a TLS handshake. It changes the split location, not the site name.</string>
+    <string name="help_udp_fake_count">The number of additional artificial UDP packets used by the selected mode. It changes extra traffic volume and load; there is no universal suitable value.</string>
+
+    <string name="help_test_sni">The server name inserted into the SNI field for test commands containing the corresponding placeholder. It changes the test TLS request, not the system DNS.</string>
+    <string name="help_test_usercommands">When enabled, the tester uses your command list instead of the built-in list. This changes which configurations are tested; unknown commands may cause test errors.</string>
+    <string name="help_test_commands">Text list of test commands: each non-empty line is treated as a separate entry. This content determines what will run; do not paste unknown lines.</string>
+    <string name="help_test_domains">The list of domains opened by the tester. Changing it changes which addresses are checked; results apply only to this list and this run.</string>
+    <string name="help_test_result">Each result row refers to one tested entry. The counter shows how many requests succeeded out of the total. This is one test run, not a guarantee for every site or network.</string>
+    <string name="help_cmd_args">This stores the engine's text configuration. Changing arguments changes startup parameters; the app cannot turn an unknown combination into a reliable recommendation. Save a copy before editing.</string>
+    <string name="help_cmd_history">History stores previously used text configurations. Tapping an entry opens actions: apply, pin, rename, edit, copy, or delete. Applying an entry changes the active configuration.</string>
+
 </resources>
