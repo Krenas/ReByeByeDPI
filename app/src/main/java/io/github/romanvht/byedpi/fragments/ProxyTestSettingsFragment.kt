@@ -48,13 +48,19 @@ class ProxyTestSettingsFragment : PreferenceFragmentCompat() {
         val manageDomainLists = findPreferenceNotNull<Preference>("manage_domain_lists")
         val activeLists = DomainListUtils.getLists(requireContext()).filter { it.isActive }
 
-        manageDomainLists.summary = if (activeLists.isEmpty()) {
-            getString(R.string.domain_lists_summary)
-        } else {
-            activeLists.joinToString(", ") { it.name }
-        }
+        manageDomainLists.summary = getString(R.string.help_test_domains) + "\n" +
+            if (activeLists.isEmpty()) {
+                getString(R.string.help_value_not_set)
+            } else {
+                activeLists.joinToString(", ") { it.name }
+            }
 
         textUserCommands.isEnabled = switchUserCommands.isChecked
+        PreferenceHelp.apply(this, mapOf(
+            "byedpi_proxytest_sni" to R.string.help_test_sni,
+            "byedpi_proxytest_usercommands" to R.string.help_test_usercommands,
+            "byedpi_proxytest_commands" to R.string.help_test_commands
+        ))
     }
 
     private fun setupNumberSummary(key: String, descriptionResId: Int) {
@@ -63,7 +69,7 @@ class ProxyTestSettingsFragment : PreferenceFragmentCompat() {
         pref.summaryProvider = Preference.SummaryProvider<EditTextPreference> { p ->
             val value = p.text ?: "—"
             val description = getString(descriptionResId)
-            "$value - $description"
+            "$description\n" + getString(R.string.help_current_value, value)
         }
     }
 }
