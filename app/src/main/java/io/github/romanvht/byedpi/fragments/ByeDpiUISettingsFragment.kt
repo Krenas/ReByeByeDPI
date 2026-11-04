@@ -124,7 +124,6 @@ class ByeDpiUISettingsFragment : PreferenceFragmentCompat() {
             "byedpi_hosts_blacklist" to R.string.help_hosts_blacklist,
             "byedpi_hosts_whitelist" to R.string.help_hosts_whitelist,
             "byedpi_default_ttl" to R.string.help_default_ttl,
-            "byedpi_desync_method" to R.string.help_desync_method,
             "byedpi_split_position" to R.string.help_split_position,
             "byedpi_split_at_host" to R.string.help_split_at_host,
             "byedpi_drop_sack" to R.string.help_drop_sack,
@@ -143,5 +142,28 @@ class ByeDpiUISettingsFragment : PreferenceFragmentCompat() {
             "byedpi_tlsrec_at_sni" to R.string.help_tlsrec_at_sni,
             "byedpi_udp_fake_count" to R.string.help_udp_fake_count
         ))
+
+        val methodPreference = findPreferenceNotNull<ListPreference>("byedpi_desync_method")
+        val methodHelp = when (desyncMethod) {
+            None -> R.string.help_method_none
+            Split -> R.string.help_method_split
+            Disorder -> R.string.help_method_disorder
+            Fake -> R.string.help_method_fake
+            OOB -> R.string.help_method_oob
+            DISOOB -> R.string.help_method_disoob
+        }
+        methodPreference.summary = getString(R.string.help_desync_method) + "\\n" +
+            getString(methodHelp) + "\\n" +
+            getString(R.string.help_current_value, methodPreference.entry?.toString() ?: getString(R.string.help_value_not_set))
+
+        val hostsModePreference = findPreferenceNotNull<ListPreference>("byedpi_hosts_mode")
+        val hostsModeHelp = when (hostsMode) {
+            Disable -> R.string.help_hosts_disabled
+            Blacklist -> R.string.help_hosts_blacklist_mode
+            Whitelist -> R.string.help_hosts_whitelist_mode
+        }
+        hostsModePreference.summary = getString(R.string.help_hosts_mode) + "\\n" +
+            getString(hostsModeHelp) + "\\n" +
+            getString(R.string.help_current_value, hostsModePreference.entry?.toString() ?: getString(R.string.help_value_not_set))
     }
 }
