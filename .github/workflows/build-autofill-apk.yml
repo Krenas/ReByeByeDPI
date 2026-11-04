@@ -1,10 +1,9 @@
-name: Build ByeByeDPI Auto Setup with Plain-Language Help
+name: Build Network Diagnostics Only APK
 
 on:
   push:
     branches:
-      - assistant/auto-fill-network-settings
-      - feature/plain-language-help
+      - feature/network-diagnostics-only
   workflow_dispatch:
 
 permissions:
@@ -13,12 +12,10 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
     steps:
-      - name: Checkout source and native submodules
+      - name: Checkout source
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -36,28 +33,38 @@ jobs:
           yes | sdkmanager --licenses
           sdkmanager \
             "platforms;android-36" \
-            "build-tools;36.0.0" \
-            "cmake;3.22.1" \
-            "ndk;27.0.12077973"
+            "build-tools;36.0.0"
 
       - name: Run unit tests and build APK
         run: |
           chmod +x ./gradlew
           ./gradlew --no-daemon --stacktrace testDebugUnitTest assembleDebug
 
-      - name: Verify APK package and signature
+      - name: Verify APK is diagnostics-only
         shell: bash
         run: |
           set -euo pipefail
-          APK="$(find app/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' | head -n 1)"
+          APK="$(find app/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk' -print -quit)"
           test -n "$APK"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$APK"
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep -E "package:|application-label:"
+          if "$ANDROID_HOME/build-tools/36.0.0/aapt" dump permissions "$APK" | grep -Eq 'android\.permission\.(INTERNET|FOREGROUND_SERVICE|REQUEST_IGNORE_BATTERY_OPTIMIZATIONS|QUERY_ALL_PACKAGES|MANAGE_EXTERNAL_STORAGE)'; then
+            echo "Unexpected network-engine permission found"
+            exit 1
+          fi
+          if unzip -Z1 "$APK" | grep -Eq '^lib/.*\.so$'; then
+            echo "Native engine library found in diagnostics APK"
+            exit 1
+          fi
+          if "$ANDROID_HOME/build-tools/36.0.0/aapt" dump xmltree "$APK" AndroidManifest.xml | grep -Eq 'E: (service|receiver)'; then
+            echo "Unexpected service or receiver component found"
+            exit 1
+          fi
 
-      - name: Upload installable debug APK
+      - name: Upload installable diagnostics APK
         uses: actions/upload-artifact@v4
         with:
-          name: ByeByeDPI-Plain-Language-Help-APK
+          name: Network-Diagnostics-Only-APK
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 14

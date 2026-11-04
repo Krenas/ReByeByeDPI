@@ -1,533 +1,215 @@
 package io.github.romanvht.byedpi.activities
 
-import android.annotation.SuppressLint
-import android.content.BroadcastReceiver
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.net.VpnService
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import android.view.Menu
-import android.view.MenuItem
 import android.view.View
-import android.view.ViewGroup
-import android.widget.ArrayAdapter
-import android.widget.ListView
+import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.ActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat
-import androidx.core.content.edit
-import androidx.lifecycle.lifecycleScope
-import io.github.romanvht.byedpi.R
-import io.github.romanvht.byedpi.data.*
-import io.github.romanvht.byedpi.databinding.ActivityMainBinding
-import io.github.romanvht.byedpi.services.ServiceManager
-import io.github.romanvht.byedpi.services.TestService
-import io.github.romanvht.byedpi.services.appStatus
-import io.github.romanvht.byedpi.utility.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import java.io.File
-import kotlin.system.exitProcess
+import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
+import io.github.romanvht.byedpi.utility.DiagnosticUtils
 
-class MainActivity : BaseActivity() {
-    private lateinit var binding: ActivityMainBinding
-    private lateinit var historyUtils: HistoryUtils
+/**
+ * Read-only network diagnostics screen.
+ *
+ * This activity does not start a VPN, proxy, native network engine, test runner,
+ * or any traffic-modification component.
+ */
+class MainActivity : AppCompatActivity() {
+    private lateinit var detailsView: TextView
+    private lateinit var recommendationsView: TextView
+    private lateinit var statusView: TextView
+    private lateinit var updatedView: TextView
+    private var callbackRegistered = false
 
-    companion object {
-        private val TAG: String = MainActivity::class.java.simpleName
-        private const val BATTERY_OPTIMIZATION_REQUESTED = "battery_optimization_requested"
+    private val connectivityManager: ConnectivityManager
+        get() = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-        private fun collectLogs(): String? {
-            return try {
-                val process = Runtime.getRuntime().exec("logcat *:D -d")
-                process.inputStream.bufferedReader().use { reader ->
-                    reader.readText()
-                }
-            } catch (exception: Exception) {
-                Log.e(TAG, "Failed to collect logs", exception)
-                null
-            }
-        }
-    }
-
-    private val vpnRegister =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            if (it.resultCode == RESULT_OK) {
-                ServiceManager.start(this, Mode.VPN)
-            } else {
-                Toast.makeText(this, R.string.vpn_permission_denied, Toast.LENGTH_SHORT).show()
-                updateStatus()
-            }
-        }
-
-    private val logsRegister = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-        ::handleLogsFileResult
-    )
-
-    private fun handleLogsFileResult(result: ActivityResult) {
-        if (result.resultCode != RESULT_OK) return
-        val data = result.data ?: return
-        val uri = data.data
-        val path = data.getStringExtra(FileActivity.EXTRA_PATH)
-        val file = if (path == null) null else File(path)
-        if (uri == null && file == null) return
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            val logs = collectLogs()
-            if (logs == null) {
-                runOnUiThread {
-                    Toast.makeText(this@MainActivity, R.string.logs_failed, Toast.LENGTH_SHORT).show()
-                }
-                return@launch
-            }
-
-            try {
-                val outputStream = when {
-                    uri != null -> contentResolver.openOutputStream(uri)
-                    file != null -> file.outputStream()
-                    else -> null
-                }
-                if (outputStream == null) {
-                    Log.e(TAG, "Failed to open output stream")
-                } else {
-                    outputStream.use { stream ->
-                        stream.write(logs.toByteArray())
-                    }
-                }
-            } catch (exception: Exception) {
-                Log.e(TAG, "Failed to save logs", exception)
-            }
-        }
-    }
-
-    private val receiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            Log.d(TAG, "Received intent: ${intent?.action}")
-
-            if (intent == null) {
-                Log.w(TAG, "Received null intent")
-                return
-            }
-
-            val senderOrd = intent.getIntExtra(SENDER, -1)
-            val sender = Sender.entries.getOrNull(senderOrd)
-            if (sender == null) {
-                Log.w(TAG, "Received intent with unknown sender: $senderOrd")
-                return
-            }
-
-            when (val action = intent.action) {
-                STARTED_BROADCAST,
-                STOPPED_BROADCAST -> updateStatus()
-
-                FAILED_BROADCAST -> {
-                    Toast.makeText(
-                        context,
-                        getString(R.string.failed_to_start, sender.name),
-                        Toast.LENGTH_SHORT,
-                    ).show()
-                    updateStatus()
-                }
-
-                else -> Log.w(TAG, "Unknown action: $action")
-            }
-        }
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) = refreshFromCallback()
+        override fun onLost(network: Network) = refreshFromCallback()
+        override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) =
+            refreshFromCallback()
+        override fun onLinkPropertiesChanged(
+            network: Network,
+            linkProperties: android.net.LinkProperties
+        ) = refreshFromCallback()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        ServiceManager.refresh(this)
 
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        setupToolbar()
-
-        historyUtils = HistoryUtils(this)
-
-        val intentFilter = IntentFilter().apply {
-            addAction(STARTED_BROADCAST)
-            addAction(STOPPED_BROADCAST)
-            addAction(FAILED_BROADCAST)
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(22), dp(20), dp(28))
         }
 
-        @SuppressLint("UnspecifiedRegisterReceiverFlag")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(receiver, intentFilter, RECEIVER_EXPORTED)
-        } else {
-            registerReceiver(receiver, intentFilter)
+        val scroll = ScrollView(this).apply {
+            isFillViewport = true
+            addView(root)
         }
+        setContentView(scroll)
 
-        binding.statusButtonCard.setOnClickListener {
-            binding.statusButtonCard.isClickable = false
-
-            val (status, _) = appStatus
-            when (status) {
-                AppStatus.Halted -> start()
-                AppStatus.Running -> stop()
-            }
-
-            binding.statusButtonCard.postDelayed({
-                binding.statusButtonCard.isClickable = true
-            }, 1000)
+        val heading = TextView(this).apply {
+            text = "Диагностика сети"
+            textSize = 26f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
         }
+        root.addView(heading, matchWrap())
 
-        binding.statusButtonCard.setOnFocusChangeListener { _, hasFocus ->
-            if (hasFocus) {
-                binding.statusButtonCard.strokeWidth = 10
-                binding.statusButtonCard.strokeColor = android.graphics.Color.argb(100, 0, 0, 0)
+        val subtitle = TextView(this).apply {
+            text = "Сведения о текущем подключении Android. Приложение не отправляет проверочные запросы и не меняет настройки сети."
+            textSize = 14f
+            setPadding(0, dp(8), 0, dp(16))
+        }
+        root.addView(subtitle, matchWrap())
+
+        statusView = bodyText(17f, true)
+        addCard(root, "Состояние подключения", statusView)
+
+        detailsView = bodyText(14f, false)
+        addCard(root, "Параметры сети", detailsView)
+
+        recommendationsView = bodyText(14f, false)
+        addCard(root, "Что проверить", recommendationsView)
+
+        updatedView = bodyText(12f, false)
+        updatedView.setPadding(dp(2), dp(10), dp(2), dp(4))
+        root.addView(updatedView, matchWrap())
+
+        val actions = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+        val refreshButton = MaterialButton(this).apply {
+            text = "Обновить"
+            setOnClickListener { refreshReport() }
+        }
+        val copyButton = MaterialButton(this).apply {
+            text = "Копировать отчёт"
+            setOnClickListener { copyReport() }
+        }
+        actions.addView(refreshButton, LinearLayout.LayoutParams(0, dp(52), 1f).apply {
+            marginEnd = dp(6)
+        })
+        actions.addView(copyButton, LinearLayout.LayoutParams(0, dp(52), 1f).apply {
+            marginStart = dp(6)
+        })
+        root.addView(actions, matchWrap().apply { topMargin = dp(10) })
+
+        val note = bodyText(13f, false).apply {
+            text = "В этой сборке отсутствуют VPN/Proxy-службы, сетевой движок ByeDPI, тестер стратегий, список команд и плитка быстрого запуска. Значения DPI-параметров не рассчитываются и не применяются."
+        }
+        addCard(root, "Ограничения приложения", note)
+
+        val privacy = bodyText(12f, false).apply {
+            text = "Отчёт может содержать локальные IP-адреса, DNS-серверы и имя Private DNS. Перед отправкой другим людям проверьте его содержимое."
+        }
+        root.addView(privacy, matchWrap().apply {
+            topMargin = dp(12)
+        })
+
+        refreshReport()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                connectivityManager.registerDefaultNetworkCallback(networkCallback)
             } else {
-                binding.statusButtonCard.strokeWidth = 0
+                val request = NetworkRequest.Builder()
+                    .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                    .build()
+                connectivityManager.registerNetworkCallback(request, networkCallback)
             }
+            callbackRegistered = true
+        } catch (_: Exception) {
+            callbackRegistered = false
         }
-
-        binding.settingsButton.setOnClickListener {
-            if (TestService.isRunning) {
-                Toast.makeText(this, R.string.test_unavailable, Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            if (appStatus.first == AppStatus.Running) {
-                Toast.makeText(this, R.string.settings_unavailable, Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            val intent = Intent(this, SettingsActivity::class.java)
-            startActivity(intent)
-        }
-
-        binding.editorButton.setOnClickListener {
-            val useCmdSettings = getPreferences().getCmdEnable()
-
-            if (!useCmdSettings && appStatus.first == AppStatus.Running) {
-                Toast.makeText(this, R.string.settings_unavailable, Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            val intent = Intent(this, SettingsActivity::class.java)
-            intent.putExtra("open_fragment", if (useCmdSettings) "cmd" else "ui")
-            startActivity(intent)
-        }
-
-        binding.testProxyButton.setOnClickListener {
-            startActivity(Intent(this, TestActivity::class.java))
-        }
-
-        binding.domainListsButton.setOnClickListener {
-            val intent = Intent(this, TestSettingsActivity::class.java)
-            intent.putExtra("open_fragment", "domain_lists")
-            startActivity(intent)
-        }
-
-        binding.strategyButton.setOnClickListener {
-            showStrategyPicker()
-        }
-
-        if (!PermissionUtils.hasNotificationPermission(this)) {
-            PermissionUtils.requestNotificationPermission(this, 1)
-        } else {
-            requestBatteryOptimization()
-        }
-
-        if (!TestService.isRunning && getPreferences().getBoolean("auto_connect", false) &&
-            appStatus.first != AppStatus.Running) {
-            this.start()
-        }
-
-        ShortcutUtils.update(this)
+        refreshReport()
     }
 
-    override fun onResume() {
-        super.onResume()
-        ServiceManager.refresh(this)
-        updateStatus()
-        updateStrategyButton()
+    override fun onStop() {
+        if (callbackRegistered) {
+            try {
+                connectivityManager.unregisterNetworkCallback(networkCallback)
+            } catch (_: Exception) {
+                // The callback may already have been removed by the system.
+            }
+            callbackRegistered = false
+        }
+        super.onStop()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        unregisterReceiver(receiver)
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        if (requestCode == 1) {
-            requestBatteryOptimization()
+    private fun refreshFromCallback() {
+        runOnUiThread {
+            if (!isFinishing && ::detailsView.isInitialized) refreshReport()
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.menu_main, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_diagnostics -> {
-                showDiagnostics()
-                true
-            }
-
-            R.id.action_save_logs -> {
-                val intent = Intent(this, FileActivity::class.java)
-                intent.putExtra(FileActivity.EXTRA_MODE, FileActivity.MODE_CREATE)
-                intent.putExtra(FileActivity.EXTRA_TYPE, FileActivity.TYPE_LOGS)
-                logsRegister.launch(intent)
-                true
-            }
-
-            R.id.action_close_app -> {
-                TestService.stop()
-                lifecycleScope.launch {
-                    try {
-                        TestService.awaitStopped()
-                        ServiceManager.waitStop()
-                    } catch (exception: Exception) {
-                        Log.e(TAG, "Failed to stop service before closing", exception)
-                        return@launch
-                    }
-                    finishAffinity()
-                    android.os.Process.killProcess(android.os.Process.myPid())
-                    exitProcess(0)
-                }
-                true
-            }
-
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
-
-    private fun showDiagnostics() {
+    private fun refreshReport() {
         val report = DiagnosticUtils.buildReport(this)
-        val padding = (24 * resources.displayMetrics.density).toInt()
-
-        val textView = TextView(this).apply {
-            text = report
-            setPadding(padding, padding / 2, padding, padding / 2)
-        }
-
-        val scrollView = ScrollView(this).apply {
-            addView(textView)
-        }
-
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(R.string.diagnostics)
-            .setView(scrollView)
-            .setPositiveButton(R.string.diagnostic_copy) { _, _ ->
-                ClipboardUtils.copy(this, report, getString(R.string.diagnostics))
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .create()
-
-        dialog.setOnShowListener {
-            val copyButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-            val cancelButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
-            copyButton.nextFocusLeftId = cancelButton.id
-            copyButton.nextFocusRightId = cancelButton.id
-            cancelButton.nextFocusLeftId = copyButton.id
-            cancelButton.nextFocusRightId = copyButton.id
-            copyButton.requestFocus()
-        }
-        dialog.show()
+        statusView.text = report.summary
+        detailsView.text = report.details
+        recommendationsView.text = report.recommendations
+        updatedView.text = "Обновлено: ${report.updatedAt}"
     }
 
-    private fun start() {
-        if (TestService.isRunning) {
-            Toast.makeText(this, R.string.test_unavailable, Toast.LENGTH_SHORT).show()
-            return
-        }
-        when (getPreferences().mode()) {
-            Mode.VPN -> {
-                val intentPrepare = VpnService.prepare(this)
-                if (intentPrepare != null) {
-                    vpnRegister.launch(intentPrepare)
-                } else {
-                    ServiceManager.start(this, Mode.VPN)
-                }
-            }
-
-            Mode.Proxy -> ServiceManager.start(this, Mode.Proxy)
-        }
+    private fun copyReport() {
+        val report = DiagnosticUtils.buildReport(this)
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboard.setPrimaryClip(ClipData.newPlainText("Диагностика сети", report.clipboardText))
+        Toast.makeText(this, "Отчёт скопирован", Toast.LENGTH_SHORT).show()
     }
 
-    private fun stop() {
-        ServiceManager.stop()
+    private fun addCard(parent: LinearLayout, title: String, content: TextView) {
+        val cardContent = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(14), dp(16), dp(16))
+        }
+        val titleView = TextView(this).apply {
+            text = title
+            textSize = 16f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setPadding(0, 0, 0, dp(8))
+        }
+        cardContent.addView(titleView, matchWrap())
+        cardContent.addView(content, matchWrap())
+
+        val card = MaterialCardView(this).apply {
+            radius = dp(16).toFloat()
+            cardElevation = dp(2).toFloat()
+            addView(cardContent)
+        }
+        parent.addView(card, matchWrap().apply {
+            topMargin = dp(8)
+            bottomMargin = dp(8)
+        })
     }
 
-    private fun updateStatus() {
-        val (status, mode) = appStatus
-
-        Log.i(TAG, "Updating status: $status, $mode")
-
-        val preferences = getPreferences()
-        val (ip, port) = preferences.getProxyIpAndPort()
-
-        binding.proxyAddress.text = getString(R.string.proxy_address, ip, port)
-
-        when (status) {
-            AppStatus.Halted -> {
-                val typedValue = android.util.TypedValue()
-                theme.resolveAttribute(android.R.attr.colorPrimary, typedValue,true)
-                binding.statusButtonCard.setCardBackgroundColor(typedValue.data)
-                binding.statusButtonIcon.clearColorFilter()
-
-                when (preferences.mode()) {
-                    Mode.VPN -> {
-                        binding.statusText.setText(R.string.vpn_disconnected)
-                    }
-
-                    Mode.Proxy -> {
-                        binding.statusText.setText(R.string.proxy_down)
-                    }
-                }
-            }
-
-            AppStatus.Running -> {
-                binding.statusButtonCard.setCardBackgroundColor(ContextCompat.getColor(this, R.color.green_active))
-                binding.statusButtonIcon.setColorFilter(ContextCompat.getColor(this, android.R.color.white))
-
-                when (mode) {
-                    Mode.VPN -> {
-                        binding.statusText.setText(R.string.vpn_connected)
-                    }
-
-                    Mode.Proxy -> {
-                        binding.statusText.setText(R.string.proxy_up)
-                    }
-                }
-            }
-        }
-    }
-
-    private fun updateStrategyButton() {
-        val useCmdSettings = getPreferences().getCmdEnable()
-
-        if (!useCmdSettings) {
-            binding.cmdButtonsRow.visibility = View.GONE
-            binding.strategyButton.visibility = View.GONE
-            return
+    private fun bodyText(size: Float, strong: Boolean): TextView =
+        TextView(this).apply {
+            textSize = size
+            if (strong) setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setLineSpacing(dp(3).toFloat(), 1.12f)
+            textAlignment = View.TEXT_ALIGNMENT_VIEW_START
         }
 
-        binding.cmdButtonsRow.visibility = View.VISIBLE
+    private fun matchWrap() = LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.MATCH_PARENT,
+        LinearLayout.LayoutParams.WRAP_CONTENT
+    )
 
-        val pinned = historyUtils.getPinnedHistory()
-        val currentCmdArgs = getPreferences().getCmdArgs()
-
-        val matched = pinned.find { it.text == currentCmdArgs }
-        val name = matched?.name?.takeIf { it.isNotBlank() }
-
-        if (name != null) {
-            binding.strategyButtonName.text = name
-            binding.strategyButtonName.visibility = View.VISIBLE
-            binding.strategyButtonText.maxLines = 1
-        } else {
-            binding.strategyButtonName.visibility = View.GONE
-            binding.strategyButtonText.maxLines = 2
-        }
-
-        binding.strategyButtonText.text = currentCmdArgs.ifBlank { getString(R.string.main_strategy_picker) }
-        binding.strategyButton.visibility = View.VISIBLE
-    }
-
-    private fun showStrategyPicker() {
-        val pinned = historyUtils.getPinnedHistory()
-
-        if (pinned.isEmpty()) {
-            Toast.makeText(this, R.string.main_strategy_no_pinned, Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val adapter = object : ArrayAdapter<Command>(
-            this,
-            R.layout.item_main_strategy,
-            pinned
-        ) {
-            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val view = convertView ?: layoutInflater.inflate(
-                    R.layout.item_main_strategy,
-                    parent,
-                    false
-                )
-
-                val command = getItem(position)!!
-
-                val nameView = view.findViewById<TextView>(R.id.strategyName)
-                val textView = view.findViewById<TextView>(R.id.strategyText)
-                val dividerView = view.findViewById<View>(R.id.strategyDivider)
-
-                val name = command.name?.takeIf { it.isNotBlank() }
-
-                if (name != null) {
-                    nameView.visibility = View.VISIBLE
-                    nameView.text = name
-                    textView.maxLines = 2
-                } else {
-                    nameView.visibility = View.GONE
-                    textView.maxLines = 3
-                }
-
-                textView.text = command.text
-                dividerView.visibility = if (position == count - 1) View.GONE else View.VISIBLE
-
-                return view
-            }
-        }
-
-        val listView = ListView(this).apply {
-            divider = null
-            setPadding(0, (10 * resources.displayMetrics.density).toInt(), 0, 0)
-            this.adapter = adapter
-        }
-
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(getString(R.string.main_strategy_picker))
-            .setView(listView)
-            .setNegativeButton(getString(android.R.string.cancel), null)
-            .create()
-
-        listView.setOnItemClickListener { _, _, position, _ ->
-            applyStrategy(pinned[position].text)
-            dialog.dismiss()
-        }
-
-        dialog.show()
-    }
-
-    private fun applyStrategy(commandText: String) {
-        getPreferences().edit { putString("byedpi_cmd_args", commandText) }
-
-        updateStrategyButton()
-
-        if (appStatus.first == AppStatus.Running) {
-            val mode = getPreferences().mode()
-            if (mode == Mode.VPN && VpnService.prepare(this) != null) {
-                return
-            }
-
-            ServiceManager.restart(this, mode)
-            Toast.makeText(this, R.string.service_restart, Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun requestBatteryOptimization() {
-        val preferences = getPreferences()
-        val alreadyRequested = preferences.getBoolean(BATTERY_OPTIMIZATION_REQUESTED, false)
-
-        if (!alreadyRequested && !PermissionUtils.isBatteryOptimizationDisabled(this)) {
-            PermissionUtils.requestBatteryOptimization(this)
-            preferences.edit { putBoolean(BATTERY_OPTIMIZATION_REQUESTED, true) }
-        }
-    }
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density + 0.5f).toInt()
 }

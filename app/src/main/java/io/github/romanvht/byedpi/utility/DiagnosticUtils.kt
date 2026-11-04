@@ -1,164 +1,232 @@
 package io.github.romanvht.byedpi.utility
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.LinkProperties
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.os.Build
-import android.system.Os
-import io.github.romanvht.byedpi.BuildConfig
-import io.github.romanvht.byedpi.R
-import io.github.romanvht.byedpi.core.ByeDpiProxyUIPreferences
-import io.github.romanvht.byedpi.data.Mode
-import io.github.romanvht.byedpi.data.PrivateDnsState
+import java.net.Inet6Address
+import java.text.DateFormat
+import java.util.Date
 
+/**
+ * Read-only diagnostics for the Android default network.
+ *
+ * No remote endpoints are contacted. The report uses only values exposed by
+ * ConnectivityManager and LinkProperties for the currently active network.
+ */
 object DiagnosticUtils {
-    fun buildReport(context: Context): String {
-        val preferences = context.getPreferences()
-        val mode = preferences.mode()
-        val privateDnsState = PrivateDnsUtils.getState(context)
-        val cmdEnabled = preferences.getCmdEnable()
-        val strategy = if (cmdEnabled) {
-            preferences.getCmdArgs()
-        } else {
-            ByeDpiProxyUIPreferences(preferences).uiargs.drop(1).joinToString(" ")
+    data class Report(
+        val summary: String,
+        val details: String,
+        val recommendations: String,
+        val updatedAt: String,
+        val clipboardText: String
+    )
+
+    fun buildReport(context: Context): Report {
+        val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = activeNetwork(manager)
+        if (network == null) {
+            return report(
+                summary = "Активное подключение не обнаружено",
+                details = "Android не сообщил приложению об активной сети.",
+                recommendations = "Проверьте, включён ли Wi-Fi или мобильная передача данных, и отключён ли режим полёта. Затем обновите отчёт.",
+                updatedAt = now()
+            )
         }
-        val (ip, port) = preferences.getProxyIpAndPort()
-        val activeLists = DomainListUtils.getLists(context)
-            .filter { it.isActive }
-            .map { it.name }
-            .sortedBy { it.lowercase() }
-            .joinToString(", ")
-            .ifEmpty { context.getString(R.string.diagnostic_none) }
 
-        return buildString {
-            appendLine(value(context, R.string.diagnostic_device, deviceName()))
-            appendLine(value(
-                context,
-                R.string.diagnostic_android_version,
-                "${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
-            ))
-            appendLine(value(context, R.string.diagnostic_kernel_version, Os.uname().release))
-            appendLine(value(context, R.string.diagnostic_app_version, BuildConfig.VERSION_NAME))
+        val capabilities = try {
+            manager.getNetworkCapabilities(network)
+        } catch (_: SecurityException) {
+            null
+        }
 
-            appendLine()
-            appendLine(context.getString(R.string.diagnostic_app_settings))
-            appendLine(value(context, R.string.diagnostic_command_line, state(context, cmdEnabled)))
-            appendLine(value(context, R.string.diagnostic_strategy, strategy))
-            appendLine(value(context, R.string.mode_setting, modeName(context, mode)))
-            appendLine(value(context, R.string.private_dns, privateDnsDescription(context, privateDnsState)))
-            if (mode == Mode.VPN) {
-                if (privateDnsState !is PrivateDnsState.Configured) {
-                    val dns = preferences.getStringNotNull("dns_ip", "1.1.1.1").ifBlank { context.getString(R.string.dns_system) }
-                    appendLine(value(
-                        context,
-                        R.string.dbs_ip_setting,
-                        dns
-                    ))
-                }
-                appendLine(value(
-                    context,
-                    R.string.ipv6_setting,
-                    state(context, preferences.getBoolean("ipv6_enable", false))
-                ))
-                appendLine(value(
-                    context,
-                    R.string.applist_setting,
-                    appFilter(context, preferences.getStringNotNull("applist_type", "disable"))
-                ))
+        val properties = try {
+            manager.getLinkProperties(network)
+        } catch (_: SecurityException) {
+            null
+        }
+
+        if (capabilities == null || properties == null) {
+            return report(
+                summary = "Не удалось прочитать параметры подключения",
+                details = "Android не предоставил сведения о возможностях сети или IP-конфигурации.",
+                recommendations = "Проверьте разрешение «Доступ к информации о подключении» в настройках Android и повторите диагностику.",
+                updatedAt = now()
+            )
+        }
+
+        val transports = transportNames(capabilities)
+        val hasInternet = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        val validated: Boolean? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        } else null
+        val captivePortal = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+            capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL)
+        val notMetered = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+
+        val addresses = properties.linkAddresses.mapNotNull { linkAddress ->
+            val address = linkAddress.address
+            val value = address.hostAddress?.substringBefore('%') ?: return@mapNotNull null
+            val family = if (address is Inet6Address) "IPv6" else "IPv4"
+            "$family: $value"
+        }
+        val dnsServers = properties.dnsServers.mapNotNull { address ->
+            address.hostAddress?.substringBefore('%')
+        }
+        val defaultRoutes = properties.routes
+            .filter { it.isDefaultRoute }
+            .map { route ->
+                val family = if (route.destination.address is Inet6Address) "IPv6" else "IPv4"
+                val gateway = route.gateway?.hostAddress?.substringBefore('%')
+                "$family: ${gateway?.takeIf { it.isNotBlank() && it != "0.0.0.0" && it != "::" } ?: "шлюз не отображается"}"
             }
-            appendLine(value(context, R.string.bye_dpi_proxy_ip_setting, ip))
-            appendLine(value(context, R.string.byedpi_proxy_port_setting, port))
 
-            appendLine()
-            appendLine(context.getString(R.string.permission_category))
-            appendLine(value(
-                context,
-                R.string.diagnostic_vpn_permission,
-                context.getString(
-                    if (PermissionUtils.hasVpnPermission(context)) R.string.diagnostic_vpn_allowed
-                    else R.string.diagnostic_vpn_denied
-                )
-            ))
-            appendLine(value(
-                context,
-                R.string.diagnostic_battery_exclusion,
-                availability(context, PermissionUtils.isBatteryOptimizationDisabled(context))
-            ))
-            appendLine(value(
-                context,
-                R.string.storage_access,
-                availability(context, PermissionUtils.hasStorageAccess(context))
-            ))
+        val privateDns = privateDnsDescription(properties)
+        val proxy = proxyDescription(properties)
+        val interfaceName = properties.interfaceName ?: "не сообщается"
+        val bandwidth = listOfNotNull(
+            capabilities.linkDownstreamBandwidthKbps.takeIf { it > 0 }?.let { "входящая ≈ ${it} Кбит/с" },
+            capabilities.linkUpstreamBandwidthKbps.takeIf { it > 0 }?.let { "исходящая ≈ ${it} Кбит/с" }
+        ).joinToString(", ").ifBlank { "оценка не предоставлена Android" }
 
+        val hasIpv6 = addresses.any { it.startsWith("IPv6:") }
+        val status = when {
+            captivePortal -> "Обнаружена сеть с авторизацией или страницей входа"
+            !hasInternet -> "Сеть подключена, но не заявляет доступ к интернету"
+            validated == false -> "Сеть подключена, но Android не подтвердил доступ к интернету"
+            validated == true -> "Android подтвердил доступ к интернету"
+            else -> "Подключение обнаружено; проверка Android недоступна на этой версии"
+        }
+
+        val details = buildString {
+            appendLine("Тип подключения: ${transports.ifBlank { "не определён" }}")
+            appendLine("Интерфейс: $interfaceName")
+            appendLine("Интернет заявлен сетью: ${yesNo(hasInternet)}")
+            appendLine("Интернет подтверждён Android: ${validated?.let { yesNo(it) } ?: "неизвестно"}")
+            appendLine("Сеть с порталом авторизации: ${yesNo(captivePortal)}")
+            appendLine("Тарификация по трафику: ${if (notMetered) "сеть помечена как нетарифицируемая" else "может тарифицироваться"}")
+            appendLine("Локальные адреса: ${addresses.ifEmpty { listOf("не предоставлены") }.joinToString("; ")}")
+            appendLine("DNS-серверы: ${dnsServers.ifEmpty { listOf("не предоставлены") }.joinToString(", ")}")
+            appendLine("Маршруты по умолчанию: ${defaultRoutes.ifEmpty { listOf("не отображаются") }.joinToString("; ")}")
+            appendLine("Private DNS: $privateDns")
+            appendLine("Системный прокси: $proxy")
+            append("Оценка пропускной способности: $bandwidth")
+        }
+
+        val advice = mutableListOf<String>()
+        when {
+            captivePortal -> advice += "Откройте обычный браузер и завершите вход в сеть, если Android или оператор показывает страницу авторизации."
+            !hasInternet -> advice += "Проверьте подключение к роутеру или мобильной сети, режим полёта и ограничения тарифа."
+            validated == false -> advice += "Android не подтвердил интернет. Проверьте страницу авторизации, перезапустите подключение и при необходимости уточните состояние сети у оператора."
+            validated == true -> advice += "Базовый доступ к интернету подтверждён Android. Это не проверяет доступность каждого отдельного сайта или приложения."
+            else -> advice += "Статус проверки интернета недоступен на этой версии Android; проверьте открытие обычных сайтов вручную."
+        }
+        if (dnsServers.isEmpty()) {
+            advice += "Адреса DNS не отображаются. Проверьте автоматическое получение сетевых параметров от роутера или оператора."
+        } else {
+            advice += "DNS-серверы получены от текущей сетевой конфигурации. Не меняйте их вручную только на основании этого отчёта."
+        }
+        if (defaultRoutes.isEmpty()) {
+            advice += "Маршрут по умолчанию не отображается. Переподключитесь к сети; если проблема повторяется, проверьте настройки роутера или обратитесь к оператору."
+        }
+        if (!hasIpv6) {
+            advice += "Глобальный IPv6-адрес не отображается. Это не обязательно ошибка: сеть может работать только через IPv4."
+        }
+        if (proxy != "не настроен") {
+            advice += "Обнаружен системный прокси или PAC-настройка. Убедитесь, что они установлены намеренно и соответствуют вашей сети."
+        }
+        if (privateDns.startsWith("активен")) {
+            advice += "Private DNS включён. Если возникают обычные ошибки разрешения имён, проверьте его состояние в системных настройках Android."
+        }
+
+        val detailsWithDevice = buildString {
+            appendLine("Устройство: ${listOf(Build.MANUFACTURER, Build.MODEL).filter { it.isNotBlank() }.distinct().joinToString(" ")}")
+            appendLine("Android: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
             appendLine()
-            appendLine(context.getString(R.string.diagnostic_test_settings))
-            appendLine(value(
-                context,
-                R.string.test_delay,
-                "${preferences.getIntStringNotNull("byedpi_proxytest_delay", 1)}${context.getString(R.string.diagnostic_seconds)}"
-            ))
-            appendLine(value(
-                context,
-                R.string.test_requests,
-                preferences.getIntStringNotNull("byedpi_proxytest_requests", 1).toString()
-            ))
-            appendLine(value(
-                context,
-                R.string.test_requests_limit,
-                preferences.getIntStringNotNull("byedpi_proxytest_limit", 20).toString()
-            ))
-            appendLine(value(
-                context,
-                R.string.test_timeout,
-                "${preferences.getLongStringNotNull("byedpi_proxytest_timeout", 5)}${context.getString(R.string.diagnostic_seconds)}"
-            ))
-            appendLine(value(
-                context,
-                R.string.test_settings_sni,
-                preferences.getStringNotNull("byedpi_proxytest_sni", "google.com")
-            ))
-            appendLine(value(
-                context,
-                R.string.test_settings_usercommands,
-                yesNo(context, preferences.getBoolean("byedpi_proxytest_usercommands", false))
-            ))
-            append(value(context, R.string.domain_lists, activeLists))
+            append(details)
+        }
+
+        return report(
+            summary = status,
+            details = detailsWithDevice,
+            recommendations = advice.joinToString("\n\n"),
+            updatedAt = now()
+        )
+    }
+
+    private fun activeNetwork(manager: ConnectivityManager): Network? {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                manager.activeNetwork
+            } else {
+                @Suppress("DEPRECATION")
+                manager.allNetworks.firstOrNull { network ->
+                    @Suppress("DEPRECATION")
+                    manager.getNetworkInfo(network)?.isConnected == true
+                }
+            }
+        } catch (_: SecurityException) {
+            null
         }
     }
 
-    private fun deviceName(): String = listOf(Build.MANUFACTURER, Build.MODEL)
-        .filter { it.isNotBlank() }
-        .distinctBy { it.lowercase() }
-        .joinToString(" ")
-
-    private fun privateDnsDescription(context: Context, state: PrivateDnsState): String = when (state) {
-        is PrivateDnsState.Configured -> state.hostname
-        PrivateDnsState.Inactive -> context.getString(R.string.private_dns_inactive)
-        PrivateDnsState.Unknown -> context.getString(R.string.private_dns_unknown)
-        PrivateDnsState.Unsupported -> context.getString(R.string.private_dns_unsupported)
+    private fun transportNames(capabilities: NetworkCapabilities): String {
+        val names = mutableListOf<String>()
+        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) names += "Wi-Fi"
+        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) names += "мобильная сеть"
+        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) names += "Ethernet"
+        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) names += "VPN-сеть"
+        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH)) names += "Bluetooth"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI_AWARE)
+        ) names += "Wi-Fi Aware"
+        return names.distinct().joinToString(", ")
     }
 
-    private fun value(context: Context, label: Int, value: String): String =
-        "${context.getString(label)}: $value"
-
-    private fun state(context: Context, enabled: Boolean): String = context.getString(
-        if (enabled) R.string.diagnostic_enabled else R.string.diagnostic_disabled
-    )
-
-    private fun yesNo(context: Context, value: Boolean): String = context.getString(
-        if (value) R.string.diagnostic_yes else R.string.diagnostic_no
-    )
-
-    private fun availability(context: Context, available: Boolean): String = context.getString(
-        if (available) R.string.diagnostic_available else R.string.diagnostic_unavailable
-    )
-
-    private fun modeName(context: Context, mode: Mode): String = when (mode) {
-        Mode.VPN -> "VPN"
-        Mode.Proxy -> context.getString(R.string.diagnostic_proxy)
+    private fun privateDnsDescription(properties: LinkProperties): String {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return "состояние недоступно на этой версии Android"
+        return when {
+            properties.isPrivateDnsActive -> {
+                val hostname = properties.privateDnsServerName
+                if (hostname.isNullOrBlank()) "активен, имя сервера не предоставлено"
+                else "активен: $hostname"
+            }
+            !properties.privateDnsServerName.isNullOrBlank() ->
+                "имя задано (${properties.privateDnsServerName}), но режим не активен"
+            else -> "не активен"
+        }
     }
 
-    private fun appFilter(context: Context, value: String): String {
-        val values = context.resources.getStringArray(R.array.applist_types_entries)
-        val names = context.resources.getStringArray(R.array.applist_types)
-        return names.getOrElse(values.indexOf(value)) { value }
+    private fun proxyDescription(properties: LinkProperties): String {
+        val proxy = properties.httpProxy ?: return "не настроен"
+        val host = proxy.host?.takeIf { it.isNotBlank() }
+        if (host != null) return "$host:${proxy.port}"
+        val pac = proxy.pacFileUrl
+        return if (pac != null && pac.toString().isNotBlank()) "PAC: $pac" else "настройка присутствует"
+    }
+
+    private fun yesNo(value: Boolean): String = if (value) "да" else "нет"
+
+    private fun now(): String = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date())
+
+    private fun report(
+        summary: String,
+        details: String,
+        recommendations: String,
+        updatedAt: String
+    ): Report {
+        val clipboardText = buildString {
+            appendLine("Диагностика сети")
+            appendLine(summary)
+            appendLine()
+            appendLine(details)
+            appendLine()
+            appendLine("Что проверить")
+            append(recommendations)
+        }
+        return Report(summary, details, recommendations, updatedAt, clipboardText)
     }
 }
