@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Checkout source
+      - name: Checkout diagnostics-only source
         uses: actions/checkout@v4
 
       - name: Set up Java
@@ -40,7 +40,7 @@ jobs:
           chmod +x ./gradlew
           ./gradlew --no-daemon --stacktrace testDebugUnitTest assembleDebug
 
-      - name: Verify APK is diagnostics-only
+      - name: Verify APK contains diagnostics only
         shell: bash
         run: |
           set -euo pipefail
@@ -48,20 +48,27 @@ jobs:
           test -n "$APK"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$APK"
           "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep -E "package:|application-label:"
-          if "$ANDROID_HOME/build-tools/36.0.0/aapt" dump permissions "$APK" | grep -Eq 'android\.permission\.(INTERNET|FOREGROUND_SERVICE|REQUEST_IGNORE_BATTERY_OPTIMIZATIONS|QUERY_ALL_PACKAGES|MANAGE_EXTERNAL_STORAGE)'; then
+          if "$ANDROID_HOME/build-tools/36.0.0/aapt" dump permissions "$APK" | grep -Eq 'android\.permission\.(INTERNET|FOREGROUND_SERVICE|REQUEST_IGNORE_BATTERY_OPTIMIZATIONS|QUERY_ALL_PACKAGES|MANAGE_EXTERNAL_STORAGE|BIND_VPN_SERVICE)'; then
             echo "Unexpected network-engine permission found"
             exit 1
           fi
           if unzip -Z1 "$APK" | grep -Eq '^lib/.*\.so$'; then
-            echo "Native engine library found in diagnostics APK"
+            echo "Native library found in diagnostics APK"
             exit 1
           fi
-          if "$ANDROID_HOME/build-tools/36.0.0/aapt" dump xmltree "$APK" AndroidManifest.xml | grep -Eq 'E: (service|receiver)'; then
-            echo "Unexpected service or receiver component found"
+          MANIFEST_DUMP="$("$ANDROID_HOME/build-tools/36.0.0/aapt" dump xmltree "$APK" AndroidManifest.xml)"
+          if echo "$MANIFEST_DUMP" | grep -Eq 'ByeDpiVpnService|ByeDpiProxyService|TestService|QuickTileService|BootReceiver|ServiceActionReceiver|ToggleActivity|TestActivity'; then
+            echo "A legacy ByeDPI component is declared in the APK"
             exit 1
           fi
+          for DEX in $(unzip -Z1 "$APK" | grep -E '^classes[0-9]*\.dex$'); do
+            if unzip -p "$APK" "$DEX" | strings | grep -Eq 'NativeEngine|NativeSession|ByeDpiVpnService|ByeDpiProxyService|TestService|QuickTileService|ServiceManager|ToggleActivity|AutoConfigurationUtils'; then
+              echo "Legacy engine code found in DEX"
+              exit 1
+            fi
+          done
 
-      - name: Upload installable diagnostics APK
+      - name: Upload diagnostics APK
         uses: actions/upload-artifact@v4
         with:
           name: Network-Diagnostics-Only-APK
