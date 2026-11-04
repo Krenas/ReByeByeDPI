@@ -53,6 +53,7 @@ class ByeDpiUISettingsFragment : PreferenceFragmentCompat() {
     override fun onResume() {
         super.onResume()
         sharedPreferences?.registerOnSharedPreferenceChangeListener(preferenceListener)
+        updatePreferences()
     }
 
     override fun onPause() {
@@ -113,5 +114,34 @@ class ByeDpiUISettingsFragment : PreferenceFragmentCompat() {
         val tlsRecEnabled = desyncHttpsEnabled && splitTlsRec.isChecked
         splitTlsRecPosition.isEnabled = tlsRecEnabled
         splitTlsRecAtSni.isEnabled = tlsRecEnabled
+
+        PreferenceHelp.apply(this, mapOf(
+            "byedpi_max_connections" to R.string.help_max_connections,
+            "byedpi_buffer_size" to R.string.help_buffer_size,
+            "byedpi_no_domain" to R.string.help_no_domain,
+            "byedpi_tcp_fast_open" to R.string.help_tcp_fast_open,
+            "byedpi_hosts_mode" to R.string.help_hosts_mode,
+            "byedpi_hosts_blacklist" to R.string.help_hosts_blacklist,
+            "byedpi_hosts_whitelist" to R.string.help_hosts_whitelist,
+            "byedpi_default_ttl" to R.string.help_default_ttl,
+            "byedpi_desync_method" to R.string.help_desync_method,
+            "byedpi_split_position" to R.string.help_split_position,
+            "byedpi_split_at_host" to R.string.help_split_at_host,
+            "byedpi_drop_sack" to R.string.help_drop_sack,
+            "byedpi_fake_ttl" to R.string.help_fake_ttl,
+            "byedpi_fake_offset" to R.string.help_fake_offset,
+            "byedpi_fake_sni" to R.string.help_fake_sni,
+            "byedpi_oob_data" to R.string.help_oob_data,
+            "byedpi_desync_http" to R.string.help_desync_http,
+            "byedpi_desync_https" to R.string.help_desync_https,
+            "byedpi_desync_udp" to R.string.help_desync_udp,
+            "byedpi_host_mixed_case" to R.string.help_host_mixed_case,
+            "byedpi_domain_mixed_case" to R.string.help_domain_mixed_case,
+            "byedpi_host_remove_spaces" to R.string.help_host_remove_spaces,
+            "byedpi_tlsrec_enabled" to R.string.help_tlsrec_enabled,
+            "byedpi_tlsrec_position" to R.string.help_tlsrec_position,
+            "byedpi_tlsrec_at_sni" to R.string.help_tlsrec_at_sni,
+            "byedpi_udp_fake_count" to R.string.help_udp_fake_count
+        ))
     }
 }
