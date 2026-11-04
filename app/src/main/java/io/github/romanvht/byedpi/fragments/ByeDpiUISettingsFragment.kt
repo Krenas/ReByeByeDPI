@@ -152,8 +152,8 @@ class ByeDpiUISettingsFragment : PreferenceFragmentCompat() {
             OOB -> R.string.help_method_oob
             DISOOB -> R.string.help_method_disoob
         }
-        methodPreference.summary = getString(R.string.help_desync_method) + "\\n" +
-            getString(methodHelp) + "\\n" +
+        methodPreference.summary = getString(R.string.help_desync_method) + "\n" +
+            getString(methodHelp) + "\n" +
             getString(R.string.help_current_value, methodPreference.entry?.toString() ?: getString(R.string.help_value_not_set))
 
         val hostsModePreference = findPreferenceNotNull<ListPreference>("byedpi_hosts_mode")
@@ -162,8 +162,8 @@ class ByeDpiUISettingsFragment : PreferenceFragmentCompat() {
             Blacklist -> R.string.help_hosts_blacklist_mode
             Whitelist -> R.string.help_hosts_whitelist_mode
         }
-        hostsModePreference.summary = getString(R.string.help_hosts_mode) + "\\n" +
-            getString(hostsModeHelp) + "\\n" +
+        hostsModePreference.summary = getString(R.string.help_hosts_mode) + "\n" +
+            getString(hostsModeHelp) + "\n" +
             getString(R.string.help_current_value, hostsModePreference.entry?.toString() ?: getString(R.string.help_value_not_set))
     }
 }
