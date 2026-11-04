@@ -91,6 +91,8 @@ class ByeDpiCMDSettingsFragment : PreferenceFragmentCompat() {
         historyPreferences.clear()
         val history = cmdHistoryUtils.getHistory()
         historyHeader.isVisible = history.isNotEmpty()
+        historyHeader.summary = getString(R.string.help_cmd_history)
+        PreferenceHelp.applySingle(this, "byedpi_cmd_args", R.string.help_cmd_args)
 
         if (history.isNotEmpty()) {
             history.sortedWith(compareByDescending<Command> { it.pinned }.thenBy { history.indexOf(it) })
