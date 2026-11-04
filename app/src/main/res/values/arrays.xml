@@ -38,12 +38,12 @@
     </array>
 
     <array name="byedpi_desync_methods">
-        <item name="none">None</item>
-        <item name="split">Split</item>
-        <item name="disorder">Disorder</item>
-        <item name="fake">Fake</item>
-        <item name="oob">Out-of-band</item>
-        <item name="oob">Disordered out-of-band</item>
+        <item name="none">Без дополнительного метода</item>
+        <item name="split">Разделение данных</item>
+        <item name="disorder">Изменение порядка данных</item>
+        <item name="fake">Дополнительный пакет</item>
+        <item name="oob">Внеполосные данные TCP</item>
+        <item name="oob">Внеполосные данные TCP с изменением порядка</item>
     </array>
     <array name="byedpi_desync_methods_entries">
         <item name="none">none</item>
