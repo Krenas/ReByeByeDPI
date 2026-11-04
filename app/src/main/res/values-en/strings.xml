@@ -247,8 +247,8 @@
     <string name="help_enabled">enabled</string>
     <string name="help_disabled">disabled</string>
     <string name="help_intro_title">How to read these settings</string>
-    <string name="help_intro_editor">The current values and the purpose of each field are shown below. These options affect traffic handling. There is no universally correct combination for every network. Changes may affect compatibility or connectivity. Leave a field unchanged when you are unsure what it does.</string>
-    <string name="help_intro_test">This section configures the test process: pauses, request counts, and the list of checked addresses. It does not tell you which DPI value is best. Longer or more parallel tests change load and duration; results do not guarantee performance in every network.</string>
+    <string name="help_intro_editor">The current values and the purpose of each field are shown below. These options affect traffic handling. There is no universally correct combination for every network. Where an input boundary is shown, it is a form constraint, not a recommended value. Changes may affect compatibility or connectivity.</string>
+    <string name="help_intro_test">This section configures the test process: pauses, request counts, and the list of checked addresses. Boundaries shown beside fields describe accepted input only, not an optimal test setup or DPI setting. Longer or more parallel tests change load and duration; results do not guarantee performance in every network.</string>
     <string name="help_intro_command">This is a text command line, not a regular settings form. Each argument can change engine behavior. Do not edit arguments manually when you do not understand them; use the standard editor explanations and save a backup first.</string>
 
     <string name="help_language">The language used for labels and messages. It does not affect the network connection.</string>
@@ -282,7 +282,7 @@
     <string name="help_split_at_host">Changes the split boundary so that it is tied to the part of the request containing the Host name.</string>
     <string name="help_drop_sack">Changes handling of TCP SACK, a mechanism that reports received data blocks. Disabling this information may affect TCP transfer efficiency and reliability.</string>
     <string name="help_fake_ttl">TTL of the additional artificial packet. It is not the TTL of the phone or of all regular packets; an unsuitable value may cause that packet to be lost.</string>
-    <string name="help_fake_offset">The offset sets the position of data inside an additional artificial packet. It changes the contents of that packet; an unsuitable value may make it invalid.</string>
+    <string name="help_fake_offset">The offset sets the position of data inside an additional artificial packet. It changes the contents of that packet; an unsuitable value may make it invalid. The standard editor does not define a separate numeric minimum or maximum for this field.</string>
     <string name="help_fake_sni">SNI is the server name sent at the start of a TLS connection. Here it is used in an additional artificial packet; changing it changes the name carried there, not the system DNS on your phone.</string>
     <string name="help_oob_data">A single control character used by the out-of-band TCP mode. Changing it changes the contents of that control field; an arbitrary character may be unsuitable.</string>
     <string name="help_desync_http">Allows the selected processing to be applied to HTTP traffic. When off, that processing is not applied to HTTP.</string>
@@ -294,9 +294,9 @@
     <string name="help_tlsrec_enabled">Enables splitting a TLS record into parts. This changes the structure of TLS data transmission; it does not decrypt traffic or change a certificate.</string>
     <string name="help_tlsrec_position">The position where a TLS record is split. It changes the boundary in the protected handshake; one DNS test cannot determine a correct value.</string>
     <string name="help_tlsrec_at_sni">Ties the TLS record split position to the SNI area — the server name at the start of a TLS handshake. It changes the split location, not the site name.</string>
-    <string name="help_udp_fake_count">The number of additional artificial UDP packets used by the selected mode. It changes extra traffic volume and load; there is no universal suitable value.</string>
+    <string name="help_udp_fake_count">The number of additional artificial UDP packets used by the selected mode. It changes extra traffic volume and load; there is no universal suitable value. The standard editor does not define a separate minimum or maximum check for this field.</string>
 
-    <string name="help_test_sni">The server name inserted into the SNI field for test commands containing the corresponding placeholder. It changes the test TLS request, not the system DNS.</string>
+    <string name="help_test_sni">The server name inserted into the SNI field for test commands containing the corresponding placeholder. It changes the test TLS request, not the system DNS. Input validation requires a domain name of at most 253 characters, containing a dot and not starting or ending with a dot.</string>
     <string name="help_test_usercommands">When enabled, the tester uses your command list instead of the built-in list. This changes which configurations are tested; unknown commands may cause test errors.</string>
     <string name="help_test_commands">Text list of test commands: each non-empty line is treated as a separate entry. This content determines what will run; do not paste unknown lines.</string>
     <string name="help_test_domains">The list of domains opened by the tester. Changing it changes which addresses are checked; results apply only to this list and this run.</string>
