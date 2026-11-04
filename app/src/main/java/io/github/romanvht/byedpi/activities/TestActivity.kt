@@ -154,7 +154,7 @@ class TestActivity : BaseActivity() {
         disclaimerTextView.text = buildString {
             append(getString(R.string.test_disclaimer))
             if (state.wasInterrupted) {
-                append("\\n\\n")
+                append("\n\n")
                 append(getString(R.string.test_crash))
             }
         }
