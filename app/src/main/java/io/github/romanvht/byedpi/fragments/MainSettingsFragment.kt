@@ -150,9 +150,10 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
         cmdSettings.isEnabled = cmdEnable
         proxyTest.isEnabled = cmdEnable
 
-        dns.summary = dnsSummary()
+        dns.summary = getString(R.string.help_dns) + "\n" + dnsSummary()
         dnsEdit.isVisible = false
-        privateDns.summary = (privateDnsState as? PrivateDnsState.Configured)?.hostname
+        privateDns.summary = getString(R.string.help_dns) + "\n" +
+            ((privateDnsState as? PrivateDnsState.Configured)?.hostname ?: getString(R.string.help_value_not_set))
         privateDns.isVisible = mode == Mode.VPN && privateDnsState is PrivateDnsState.Configured
 
         when (mode) {
@@ -186,16 +187,33 @@ class MainSettingsFragment : PreferenceFragmentCompat() {
         }
 
         if (PermissionUtils.isBatteryOptimizationDisabled(requireContext())) {
-            batteryOptimization.summary = getString(R.string.battery_optimization_disabled_summary)
+            batteryOptimization.summary = getString(R.string.battery_optimization_disabled_summary) + "\n" + getString(R.string.help_battery)
         } else {
-            batteryOptimization.summary = getString(R.string.battery_optimization_summary)
+            batteryOptimization.summary = getString(R.string.battery_optimization_summary) + "\n" + getString(R.string.help_battery)
         }
 
         if (PermissionUtils.hasStorageAccess(requireContext())) {
-            storageAccess.summary = getString(R.string.storage_access_allowed_summary)
+            storageAccess.summary = getString(R.string.storage_access_allowed_summary) + "\n" + getString(R.string.help_storage)
         } else {
-            storageAccess.summary = getString(R.string.storage_access_summary)
+            storageAccess.summary = getString(R.string.storage_access_summary) + "\n" + getString(R.string.help_storage)
         }
+
+        PreferenceHelp.apply(this, mapOf(
+            "language" to R.string.help_language,
+            "app_theme" to R.string.help_theme,
+            "byedpi_mode" to R.string.help_mode,
+            "ipv6_enable" to R.string.help_ipv6,
+            "applist_type" to R.string.help_applist,
+            "selected_apps" to R.string.help_selected_apps,
+            "autostart" to R.string.help_autostart,
+            "auto_connect" to R.string.help_autoconnect,
+            "byedpi_enable_cmd_settings" to R.string.help_cmd_enabled,
+            "byedpi_ui_settings" to R.string.help_ui_editor,
+            "byedpi_cmd_settings" to R.string.help_cmd_editor,
+            "proxy_test" to R.string.help_proxy_test,
+            "byedpi_proxy_ip" to R.string.help_proxy_ip,
+            "byedpi_proxy_port" to R.string.help_proxy_port
+        ))
     }
 
     private val dnsPresets: List<Pair<String, String>>
