@@ -252,7 +252,7 @@
 
     <string name="help_language">The language used for labels and messages. It does not affect the network connection.</string>
     <string name="help_theme">Changes only the app appearance: light, dark, or system theme.</string>
-    <string name="help_mode">VPN uses Android's system VPN interface for selected traffic. Proxy opens a local proxy port. These are different traffic paths; stop the service before switching.</string>
+    <string name="help_mode">VPN uses the Android system VPN interface for selected traffic. Proxy opens a local proxy port. These are different traffic paths; stop the service before switching.</string>
     <string name="help_dns">DNS translates a site name into a network address. It affects address lookup but does not guarantee that a site is reachable. System Private DNS takes precedence when configured.</string>
     <string name="help_ipv6">Allows IPv6 in VPN mode. It only applies when the current network has an IPv6 address and route. This switch cannot create IPv6 support where none exists.</string>
     <string name="help_applist">Controls which apps are covered by the VPN. None disables list filtering; blacklist excludes selected apps; whitelist includes only selected apps.</string>
@@ -263,7 +263,7 @@
     <string name="help_ui_editor">Opens the standard editor with separate fields and switches. Its values are saved in app settings.</string>
     <string name="help_cmd_editor">Opens the command-line editor. This is a text format for experienced users; changing arguments at random may prevent startup.</string>
     <string name="help_proxy_test">Opens the test screen for the saved command set. Results describe only that run and the selected list of sites.</string>
-    <string name="help_proxy_ip">The local address where the app accepts proxy connections. This is not a website address or your phone's external IP. An invalid address can make the proxy unavailable.</string>
+    <string name="help_proxy_ip">The local address where the app accepts proxy connections. This is not a website address or the external IP assigned to your phone. An invalid address can make the proxy unavailable.</string>
     <string name="help_proxy_port">The local proxy port — the connection point on the phone. If another service already uses it, the proxy may fail to start.</string>
     <string name="help_battery">Excluding the app from battery optimization helps Android avoid stopping its background service. It may increase battery use.</string>
     <string name="help_storage">This permission is used for some import, export, and file operations. It does not change network settings.</string>
@@ -281,8 +281,8 @@
     <string name="help_split_at_host">Changes the split boundary so that it is tied to the part of the request containing the Host name.</string>
     <string name="help_drop_sack">Changes handling of TCP SACK, a mechanism that reports received data blocks. Disabling this information may affect TCP transfer efficiency and reliability.</string>
     <string name="help_fake_ttl">TTL of the additional artificial packet. It is not the TTL of the phone or of all regular packets; an unsuitable value may cause that packet to be lost.</string>
-    <string name="help_fake_offset">The offset sets the position of data inside an additional artificial packet. It changes that packet's contents; an unsuitable value may make it invalid.</string>
-    <string name="help_fake_sni">SNI is the server name sent at the start of a TLS connection. Here it is used in an additional artificial packet; changing it changes the name carried there, not the phone's DNS.</string>
+    <string name="help_fake_offset">The offset sets the position of data inside an additional artificial packet. It changes the contents of that packet; an unsuitable value may make it invalid.</string>
+    <string name="help_fake_sni">SNI is the server name sent at the start of a TLS connection. Here it is used in an additional artificial packet; changing it changes the name carried there, not the system DNS on your phone.</string>
     <string name="help_oob_data">A single control character used by the out-of-band TCP mode. Changing it changes the contents of that control field; an arbitrary character may be unsuitable.</string>
     <string name="help_desync_http">Allows the selected processing to be applied to HTTP traffic. When off, that processing is not applied to HTTP.</string>
     <string name="help_desync_https">Allows the selected processing to be applied to HTTPS/TLS traffic. When off, that processing is not applied to HTTPS.</string>
@@ -300,7 +300,7 @@
     <string name="help_test_commands">Text list of test commands: each non-empty line is treated as a separate entry. This content determines what will run; do not paste unknown lines.</string>
     <string name="help_test_domains">The list of domains opened by the tester. Changing it changes which addresses are checked; results apply only to this list and this run.</string>
     <string name="help_test_result">Each result row refers to one tested entry. The counter shows how many requests succeeded out of the total. This is one test run, not a guarantee for every site or network.</string>
-    <string name="help_cmd_args">This stores the engine's text configuration. Changing arguments changes startup parameters; the app cannot turn an unknown combination into a reliable recommendation. Save a copy before editing.</string>
+    <string name="help_cmd_args">This stores the text configuration used by the engine. Changing arguments changes startup parameters; the app cannot turn an unknown combination into a reliable recommendation. Save a copy before editing.</string>
     <string name="help_cmd_history">History stores previously used text configurations. Tapping an entry opens actions: apply, pin, rename, edit, copy, or delete. Applying an entry changes the active configuration.</string>
 
 
