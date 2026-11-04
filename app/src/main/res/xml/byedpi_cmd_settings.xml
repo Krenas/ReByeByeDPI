@@ -3,13 +3,20 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:tag="byedpi_cmd_settings">
 
+    <Preference
+        android:key="help_cmd_intro"
+        android:title="@string/help_intro_title"
+        android:summary="@string/help_intro_command"
+        android:selectable="false"
+        app:iconSpaceReserved="false" />
+
     <EditTextPreference
         android:key="byedpi_cmd_args"
         android:title="@string/command_line_arguments"
         android:dialogTitle="@string/command_line_arguments"
         android:inputType="textMultiLine"
-        app:iconSpaceReserved="false"
-        app:useSimpleSummaryProvider="true" />
+        app:iconSpaceReserved="false" 
+            android:summary="@string/help_cmd_args"/>
 
     <Preference
         android:key="cmd_editor_buttons"
