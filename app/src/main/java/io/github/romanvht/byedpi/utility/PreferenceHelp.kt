@@ -14,17 +14,19 @@ import io.github.romanvht.byedpi.R
 object PreferenceHelp {
     fun apply(
         fragment: PreferenceFragmentCompat,
-        descriptions: Map<String, Int>
+        descriptions: Map<String, Int>,
+        inputLimits: Map<String, String> = emptyMap()
     ) {
         descriptions.forEach { (key, descriptionId) ->
             val preference = fragment.findPreference<Preference>(key) ?: return@forEach
-            val description = fragment.getString(descriptionId)
-            val currentValue = currentValue(fragment, preference)
-            preference.summary = if (currentValue == null) {
-                description
-            } else {
-                description + "\n" + fragment.getString(R.string.help_current_value, currentValue)
+            val summaryLines = mutableListOf(fragment.getString(descriptionId))
+            inputLimits[key]?.let { limit ->
+                summaryLines += fragment.getString(R.string.help_input_limit, limit)
             }
+            currentValue(fragment, preference)?.let { value ->
+                summaryLines += fragment.getString(R.string.help_current_value, value)
+            }
+            preference.summary = summaryLines.joinToString("\n")
         }
     }
 
