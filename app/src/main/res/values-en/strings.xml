@@ -303,4 +303,15 @@
     <string name="help_cmd_args">This stores the engine's text configuration. Changing arguments changes startup parameters; the app cannot turn an unknown combination into a reliable recommendation. Save a copy before editing.</string>
     <string name="help_cmd_history">History stores previously used text configurations. Tapping an entry opens actions: apply, pin, rename, edit, copy, or delete. Applying an entry changes the active configuration.</string>
 
+
+    <string name="help_method_none">Does not use an additional stream-processing method.</string>
+    <string name="help_method_split">Divides the data stream into separate parts. This changes data transmission boundaries.</string>
+    <string name="help_method_disorder">Changes the order in which stream parts are sent. This affects the order in which data is received.</string>
+    <string name="help_method_fake">Adds an additional artificially formed packet to the transfer. Its contents depend on other editor fields.</string>
+    <string name="help_method_oob">Uses a separate TCP out-of-band data mechanism. This is a special part of TCP exchange.</string>
+    <string name="help_method_disoob">Combines TCP out-of-band data with a change in transmission order.</string>
+    <string name="help_hosts_disabled">The domain list rule is not applied.</string>
+    <string name="help_hosts_blacklist_mode">Domains in the blacklist are excluded from the selected handling; other domains are not listed.</string>
+    <string name="help_hosts_whitelist_mode">The selected handling applies only to domains in the whitelist.</string>
+
 </resources>
