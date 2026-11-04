@@ -162,7 +162,7 @@
     <string name="battery_optimization_disabled_summary">Disabled</string>
     <string name="permission_category">Permissions</string>
     <string name="documentation_link">Instruction</string>
-    <string name="proxytest_delay_desc">Pause before the next check. A longer pause makes the run take longer; it does not automatically improve a network option.</string>
+    <string name="proxytest_delay_desc">Pause before checking a site and between tested entries. In the current implementation, one field unit equals 0.5 seconds. A longer pause makes the run take longer but does not make a network configuration better.</string>
     <string name="proxytest_requests_desc">How many times the tester repeats a request to each domain. More repeats mean more requests and a longer test; they do not guarantee a more accurate result.</string>
     <string name="proxytest_limit_desc">How many requests the tester may run at once. This affects simultaneous network and device load; excessive load can cause delays and errors.</string>
     <string name="proxytest_timeout_desc">How long the tester waits for one request. Too little time may mark a slow site as unavailable; more time makes the test longer.</string>
@@ -242,6 +242,7 @@
     <string name="storage_access_not_granted">File access was not granted</string>
 
     <string name="help_current_value">Current: %1$s</string>
+    <string name="help_input_limit">App input validation: %1$s. This is an accepted input boundary, not a recommended or optimal value.</string>
     <string name="help_value_not_set">not set</string>
     <string name="help_enabled">enabled</string>
     <string name="help_disabled">disabled</string>
